@@ -1,125 +1,134 @@
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include "header.h"
-#include <dirent.h>
-#include "libshell/libshell.h"
 
-#define BUFFER_SIZE 100
+void sig_handler(int sig);
+int execute(char **args, char **front);
 
-/*
- * Takes arguments from command line and locates them in PATH.
- * @cmd: The command entered by the user.
- * @str: The string entered by the user.
- * @env: The environment.
+/**
+ * sig_handler - Prints a new prompt upon a signal.
+ * @sig: The signal.
+ */
+void sig_handler(int sig)
+{
+	char *new_prompt = "\n$ ";
+
+	(void)sig;
+	signal(SIGINT, sig_handler);
+	write(STDIN_FILENO, new_prompt, 3);
+}
+
+/**
+ * execute - Executes a command in a child process.
+ * @args: An array of arguments.
+ * @front: A double pointer to the beginning of args.
  *
- * Return: 0 on success, 1 on failure.
+ * Return: If an error occurs - a corresponding error code.
+ *         O/w - The exit value of the last executed command.
  */
-int main(int argc, __attribute__((unused)) char **argv, char **env)
+int execute(char **args, char **front)
 {
-        /*
-         * @exec_argv stores the array of commands to be executed
-         * @exec_size stores the number of strings in the array exec_argv
-         */
-	pid_t pid;
-	int status, exec_size;
-	/*char *path_to_exec;*/
-	/* char *concat_str; */
-	char **exec_argv;
+	pid_t child_pid;
+	int status, flag = 0, ret = 0;
+	char *command = args[0];
 
- 	/* check usage */
-        if (usage(argc, 1, "No args please.\n"))
-                return 1;
+	if (command[0] != '/' && command[0] != '.')
+	{
+		flag = 1;
+		command = get_location(command);
+	}
 
-	while (1) {
-                /* obtain commands entered by the user */
-                exec_argv = prompt();
-                /* obtain number of strings in the array */
-		exec_size = grid_size(exec_argv);
-
-                /* built-in command function */
-
-		if (str_cmp(exec_argv[0], "exit") == 0) {
-                        if (grid_size(exec_argv) == 1)
-                                break;
-                        if(usage(grid_size(exec_argv), 2, "Too many args for exit status. Returning 1.\n"))
-                                return 1;
-                        else
-                                return atoi(exec_argv[1]);
-                }
-
-                /* handle the $? variable */
-                if (WIFEXITED(status))
-                        replace_expr("$?", WEXITSTATUS(status), exec_argv);
-
-                /* linux OS command */
-
-		if ((pid = fork()) == -1) {
-			perror("fork");
-			return 2;
-		} else if (pid == 0) {
-                        /* CHILD PROCESS */
-
-                        execve(find_path(exec_argv[0], env), exec_argv, env);
-			perror("execve");
-			free_grid(exec_argv, exec_size);
-                        /* If execve fails, this child process returns 3 */
-			return 3;
-		} else {
-                        /* PARENT PROCESS */
-                        wait(&status);
+	if (!command || (access(command, F_OK) == -1))
+	{
+		if (errno == EACCES)
+			ret = (create_error(args, 126));
+		else
+			ret = (create_error(args, 127));
+	}
+	else
+	{
+		child_pid = fork();
+		if (child_pid == -1)
+		{
+			if (flag)
+				free(command);
+			perror("Error child:");
+			return (1);
 		}
-
-		free_grid(exec_argv, exec_size);
+		if (child_pid == 0)
+		{
+			execve(command, args, environ);
+			if (errno == EACCES)
+				ret = (create_error(args, 126));
+			free_env();
+			free_args(args, front);
+			free_alias_list(aliases);
+			_exit(ret);
+		}
+		else
+		{
+			wait(&status);
+			ret = WEXITSTATUS(status);
+		}
 	}
-
-	free_grid(exec_argv, exec_size);
-	return 0;
+	if (flag)
+		free(command);
+	return (ret);
 }
 
-/*
- * This function handles the prompt until the user enters a command. Upon
- * receiving commands from the user, it returns the an array of strings
- * containing the command.
+/**
+ * main - Runs a simple UNIX command interpreter.
+ * @argc: The number of arguments supplied to the program.
+ * @argv: An array of pointers to the arguments.
+ *
+ * Return: The return value of the last executed command.
  */
-
-char **prompt(void)
+int main(int argc, char *argv[])
 {
-        char *raw_str, **exec_argv;
+	int ret = 0, retn;
+	int *exe_ret = &retn;
+	char *prompt = "$ ", *new_line = "\n";
 
-        /* keep prompting the user until something is entered */
-        while (1) {
-                print_prompt();
-                raw_str = read_line(0);
-                if (str_len(raw_str) != 0) {
-                        exec_argv = string_split(raw_str, ' ');
-                        /* frees the memory allocated in read_line() */
-                        free(raw_str);
-                        return exec_argv;
-                }
-        }
-}
+	name = argv[0];
+	hist = 1;
+	aliases = NULL;
+	signal(SIGINT, sig_handler);
 
-char usage(int argc, int expected, char *str)
-{
-	if (argc != expected) {
-                print_string(str);
-		return 1;
+	*exe_ret = 0;
+	environ = _copyenv();
+	if (!environ)
+		exit(-100);
+
+	if (argc != 1)
+	{
+		ret = proc_file_commands(argv[1], exe_ret);
+		free_env();
+		free_alias_list(aliases);
+		return (*exe_ret);
 	}
 
-        return 0;
-}
+	if (!isatty(STDIN_FILENO))
+	{
+		while (ret != END_OF_FILE && ret != EXIT)
+			ret = handle_args(exe_ret);
+		free_env();
+		free_alias_list(aliases);
+		return (*exe_ret);
+	}
 
-void replace_expr(char *expr, int value, char **exec_argv)
-{
-        int i;
+	while (1)
+	{
+		write(STDOUT_FILENO, prompt, 2);
+		ret = handle_args(exe_ret);
+		if (ret == END_OF_FILE || ret == EXIT)
+		{
+			if (ret == END_OF_FILE)
+				write(STDOUT_FILENO, new_line, 1);
+			free_env();
+			free_alias_list(aliases);
+			exit(*exe_ret);
+		}
+	}
 
-        for (i = 0; i < grid_size(exec_argv); i++) {
-                if (str_cmp(exec_argv[i], expr) == 0) {
-                        free(exec_argv[i]);
-                        exec_argv[i] = int_to_string(value);
-                }
-        }
+	free_env();
+	free_alias_list(aliases);
+	return (*exe_ret);
 }
