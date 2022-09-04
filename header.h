@@ -68,6 +68,13 @@ void set_alias(char *var_name, char *value);
 void print_alias(alias_t *alias);
 int cant_open(char *file_path);
 int proc_file_commands(char *file_path, int *exe_ret);
+void free_args(char **args, char **front);
+char *get_pid(void);
+char *get_env_value(char *beginning, int len);
+void variable_replacement(char **args, int *exe_ret);
+void handle_line(char **line, ssize_t read);
+ssize_t get_new_len(char *line);
+void logical_ops(char *line, ssize_t *new_len);
 
 
 #endif
