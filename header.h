@@ -41,6 +41,8 @@ int call_args(char **args, char **front, int *exe_ret);
 int run_args(char **args, char **front, int *exe_ret);
 int handle_args(int *exe_ret);
 int check_args(char **args);
+char *fill_path_dir(char *path);
+list_t *get_path_dir(char *path);
 
 
 #endif
