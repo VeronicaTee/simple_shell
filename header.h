@@ -33,7 +33,14 @@ char *error_2_cd(char **args);
 char *error_2_syntax(char **args);
 char *error_126(char **args);
 char *error_127(char **args);
-
+int token_len(char *str, char *delim);
+int count_tokens(char *str, char *delim);
+char **_strtok(char *line, char *delim);
+char *get_args(char *line, int *exe_ret);
+int call_args(char **args, char **front, int *exe_ret);
+int run_args(char **args, char **front, int *exe_ret);
+int handle_args(int *exe_ret);
+int check_args(char **args);
 
 
 #endif
