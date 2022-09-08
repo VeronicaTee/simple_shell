@@ -67,5 +67,7 @@ int setenv(char **args, char __attribute__((__unused__)) **front);
 int unsetenv(char **args, char __attribute__((__unused__)) **front);
 int (*get_builtin(char *command))(char **args, char **front);
 int builtin_helper(char **args, char __attribute__((__unused__)) **front);
+int _strcmp(char *s1, char *s2);
+
 
 #endif
