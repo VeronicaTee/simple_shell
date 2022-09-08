@@ -62,5 +62,10 @@ void free_list(link_t *head);
 char *check_path(char *argm);
 int _myenv(char *line, int counter, char **argv, char **env);
 int _getchar(void);
+int builtin_env(char **args, char __attribute__((__unused__)) **front);
+int setenv(char **args, char __attribute__((__unused__)) **front);
+int unsetenv(char **args, char __attribute__((__unused__)) **front);
+int (*get_builtin(char *command))(char **args, char **front);
+int builtin_helper(char **args, char __attribute__((__unused__)) **front);
 
 #endif
