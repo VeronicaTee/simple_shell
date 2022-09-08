@@ -2,8 +2,8 @@
 
 int (*get_builtin(char *command))(char **args, char **front);
 int shellby_exit(char **args, char **front);
-int shellby_cd(char **args, char __attribute__((__unused__)) **front);
-int shellby_help(char **args, char __attribute__((__unused__)) **front);
+int shellby_cd(char **args, char **front);
+int shellby_help(char **args, char **front);
 
 /**
  * get_builtin - Matches a command with a corresponding
@@ -88,7 +88,7 @@ int shellby_exit(char **args, char **front)
  *         If an error occurs - -1.
  *         Otherwise - 0.
  */
-int shellby_cd(char **args, char __attribute__((__unused__)) **front)
+int shellby_cd(char **args, **front)
 {
 	char **dir_info, *new_line = "\n";
 	char *oldpwd = NULL, *pwd = NULL;

@@ -3,7 +3,7 @@
 
 char **_copyenv(void);
 void free_env(void);
-char **_getenv(const char *var);
+char **_getenv(const char *name);
 
 /**
  * _copyenv - Creates a copy of the environment.
@@ -56,19 +56,19 @@ void free_env(void)
 
 /**
  * _getenv - Gets an environmental variable from the PATH.
- * @var: The name of the environmental variable to get.
+ * @name: The name of the environmental variable to get.
  *
  * Return: If the environmental variable does not exist - NULL.
  *         Otherwise - a pointer to the environmental variable.
  */
-char **_getenv(const char *var)
+char **_getenv(const char *name)
 {
 	int index, len;
 
-	len = _strlen(var);
+	len = _strlen(name);
 	for (index = 0; environ[index]; index++)
 	{
-		if (_strncmp(var, environ[index], len) == 0)
+		if (_strncmp(name, environ[index], len) == 0)
 			return (&environ[index]);
 	}
 
