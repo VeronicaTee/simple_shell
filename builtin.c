@@ -73,36 +73,7 @@ int _myenv(char *line, int counter, char **argv, char **env)
 }
 
 /**
- * get_builtin - Matches a command with a corresponding
- *               shellby builtin function.
- * @command: The command to match.
- *
- * Return: A function pointer to the corresponding builtin.
- */
-int (*get_builtin(char *command))(char **args, char **front)
-{
-	builtin_t funcs[] = {
-		{ "exit", _myexit },
-		{ "env", _myenv },
-		{ "setenv", setenv },
-		{ "unsetenv", unsetenv },
-		{ "cd", shellby_cd },
-		{ "alias", shellby_alias },
-		{ "help", builtin_helper },
-		{ NULL, NULL }
-	};
-	int i;
-
-	for (i = 0; funcs[i].name; i++)
-	{
-		if (_strcmp(funcs[i].name, command) == 0)
-			break;
-	}
-	return (funcs[i].f);
-}
-
-/**
- * builtin_helper - Displays information about shellby builtin commands.
+ * builtin_helper - Displays information about builtin commands.
  * @args: An array of arguments.
  * @front: A pointer to the beginning of args.
  *
